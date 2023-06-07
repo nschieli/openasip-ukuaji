@@ -14,6 +14,7 @@ Notable bugfixes
 - ProDe: Fix operand usage and resource boxes to use default colors propagated
   from system theme instead of manually setting them to black and white.
 - AlmaIF: Fix a bug in almaif_decoder memory mask computation
+- Add a latency to clock/lock cycle counter to increase clock frequency
 
 2.0     November 2022
 =====================
