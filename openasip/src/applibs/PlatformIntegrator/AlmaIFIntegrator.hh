@@ -152,6 +152,7 @@ private:
     bool imem_dp_ = false;
 
     bool generateIntegratedTestbench_ = false;
+    bool intelCompatible_ = false;
 };
 
 #endif

@@ -93,6 +93,7 @@ AlmaIFIntegrator::AlmaIFIntegrator(
             "AlmaIF interface requires connections to an external debugger.";
         throw InvalidData(__FILE__, __LINE__, "AlmaIFIntegrator", msg);
     }
+    intelCompatible_ = idf->icDecoderParameterValue("bram-vendor") == "intel";
 }
 
 AlmaIFIntegrator::~AlmaIFIntegrator() {
@@ -1008,7 +1009,8 @@ AlmaIFIntegrator::imemInstance(MemInfo imem, int /* coreId */) {
                 imemGen_ = new XilinxBlockRamGenerator(
                     imem.mauWidth, imem.widthInMaus, imem.portAddrw, 32,
                     axiAddrWidth, this, warningStream(), errorStream(), true,
-                    almaifBlock_, "INSTR", false, false);
+                    almaifBlock_, "INSTR", false, false, intelCompatible_,
+                    intelCompatible_);
             }
         } else if (imem.type == VHDL_ARRAY) {
             imemGen_ = new VhdlRomGenerator(
@@ -1095,7 +1097,7 @@ AlmaIFIntegrator::dmemInstance(
                 dmem.mauWidth, dmem.widthInMaus, addrw, bDataWidth,
                 bAddrWidth, this, warningStream(), errorStream(),
                 genDualPortRam, almaifBlock_, dmem.asName, overrideAsWidth,
-                genSingleRam);
+                genSingleRam, intelCompatible_, false);
         } else {
             TCEString msg = "Unsupported data memory type";
             throw InvalidData(__FILE__, __LINE__, "AlmaIFIntegrator", msg);
