@@ -107,7 +107,115 @@ RFGen::createMandatoryPorts() {
  */
 void
 RFGen::createGuardPort() {
-    return;
+    if (!adfRF_->isUsedAsGuard()) {
+        return;
+    }
+    rf_ << OutPort(guardPortName_, adfRF_->size(), WireType::Vector);
+}
+
+/*
+ * Create guard process.
+ */
+void
+RFGen::createGuardProcess() {
+    if (!adfRF_->isUsedAsGuard()) {
+        return;
+    }
+    assert(adfRF_->guardLatency() == 1 &&
+           "RFGen supports only guard latency 1");
+
+    Asynchronous guardPortProcess(guardPortName_ + "_cp");
+    for (int i = 0; i < adfRF_->size(); i++) {
+        behaviour_
+            << Assign(guardPortName_ + "(" + std::to_string(i) + ")",
+                      LHSSignal(mainRegName_
+                                + "(" + std::to_string(i)+ ")(0)"));
+    }
+}
+
+/*
+ * Create register file write process.
+ */
+void
+RFGen::createRFWriteProcess() {
+    // Write raw code as HDLGenerator does not yet support splicing or
+    // array types.
+    rf_ << RawCodeLine(
+        "type   reg_type is array (natural range <>) of std_logic_vector("
+        + std::to_string(adfRF_->width()) + "-1 downto 0 );",
+        "reg [" + std::to_string(adfRF_->width()) + "-1:0]       regfile_r [0:"
+        + std::to_string(adfRF_->size()) + "-1];");
+    rf_ << RawCodeLine(
+        "signal reg    : reg_type (" + std::to_string(adfRF_->size()) + "-1 downto 0);",
+        "");
+
+    std::string vhdlCode
+        = "---------------------------------------------------------------\n"
+        "Input : PROCESS (clk, rstx)\n"
+        "---------------------------------------------------------------\n"
+        "variable opc : integer;\n"
+        "\n"
+        "BEGIN\n"
+        "  -- Asynchronous Reset\n"
+        "  IF (rstx = '0') THEN;\n"
+        "    for idx in (reg'length-1) downto 0 loop\n"
+        "      reg(idx) <= (others => '0');\n"
+        "    end loop;\n"
+        "  ELSIF (clk'EVENT AND clk = '1') THEN\n"
+        "    IF glock = '0' THEN\n";
+
+    for (int i = 0; i < adfRF_->portCount(); ++i) {
+        TTAMachine::RFPort* adfPort = dynamic_cast<TTAMachine::RFPort*>(adfRF_->port(i));
+        if (adfPort->isInput()) {
+            std::string loadPortName = "load_" + adfPort->name() + "_in";
+            std::string opcodePortName = "opcode_" + adfPort->name() + "_in";
+            std::string dataPortName = "data_" + adfPort->name() + "_in";
+            vhdlCode
+                += "      IF " + loadPortName + " = '1' THEN\n"
+                +  "        opc := conv_integer(unsigned(" + opcodePortName + "));\n"
+                +  "        reg(opc) <= " + dataPortName +";\n"
+                +  "      END IF;\n";
+        }
+    }
+    vhdlCode += "    END IF;\n";
+    vhdlCode += "  END IF;\n";
+    vhdlCode += "END PROCESS Input;\n";
+
+    std::string verilogCode = ""; // TODO
+
+    behaviour_ << RawCodeLine(vhdlCode, verilogCode);
+
+}
+
+/*
+ * Create register file write process.
+ */
+void
+RFGen::createRFReadProcess() {
+    std::string vhdlCode = "";
+    for (int i = 0; i < adfRF_->portCount(); ++i) {
+        TTAMachine::RFPort* adfPort = dynamic_cast<TTAMachine::RFPort*>(adfRF_->port(i));
+        if (adfPort->isOutput()) {
+            std::string opcodePortName = "opcode_" + adfPort->name() + "_in";
+            std::string dataPortName = "data_" + adfPort->name() + "_out";
+            vhdlCode +=
+                dataPortName + " <= reg(conv_integer(unsigned("
+                + opcodePortName + ")));";
+        }
+    }
+
+    std::string verilogCode = ""; // TODO
+
+    behaviour_ << RawCodeLine(vhdlCode, verilogCode);
+}
+
+void
+RFGen::finalizeHDL() {
+    // Finalize and set global options.
+    rf_ << behaviour_;
+    for (auto&& option : globalOptions_) {
+        rf_ << Option(option);
+    }
 }
 
 /**
@@ -127,6 +235,11 @@ RFGen::implement(
         rfgen.createRFHeaderComment();
         rfgen.createMandatoryPorts();
         rfgen.createGuardPort();
+        rfgen.createRFWriteProcess();
+        rfgen.createRFReadProcess();
+        rfgen.createGuardProcess();
+
+        rfgen.finalizeHDL();
         rfgen.createImplementationFiles();
     }
 }

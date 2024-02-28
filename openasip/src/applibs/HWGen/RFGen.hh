@@ -35,6 +35,7 @@
 #include <string>
 #include <vector>
 #include "RFImplementationLocation.hh"
+#include "BinaryOps.hh"
 
 class RFGen {
 public:
@@ -70,6 +71,10 @@ private:
     void createRFHeaderComment();
     void createMandatoryPorts();
     void createGuardPort();
+    void createGuardProcess();
+    void createRFWriteProcess();
+    void createRFReadProcess();
+    void finalizeHDL();
     void createImplementationFiles();
 
     const ProGeOptions& options_;
@@ -83,4 +88,9 @@ private:
 
     std::string moduleName_;
     ProGe::NetlistBlock* netlistBlock_;
+
+    HDLGenerator::Behaviour behaviour_;
+
+    const std::string mainRegName_ = "reg";
+    const std::string guardPortName_ = "guard_out";
 };
