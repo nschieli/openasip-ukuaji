@@ -1503,6 +1503,9 @@ namespace HDLGenerator {
                        << ident << "use ieee.std_logic_1164.all;\n"
                        << ident << "use ieee.numeric_std.all;\n"
                        << ident << "use ieee.std_logic_misc.all;\n"
+                       << ident << "use STD.textio.all;\n"
+                       << ident << "use ieee.std_logic_textio.all;\n"
+                       << ident << "use IEEE.math_real.all;\n"
                 // Entity
                        << ident << "\n"
                        << ident << "entity " << name() << " is\n";

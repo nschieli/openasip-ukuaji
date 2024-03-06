@@ -1008,11 +1008,6 @@ namespace ProGe {
             new NetlistPort("glock_in", "1", 1, BIT, IN, *block);
         mapGlobalLockPort(*block, *glockPort);
 
-        // global lock request port
-        NetlistPort* glockReqPort = new NetlistPort(
-            "glockreq_out", "1", 1, BIT, OUT, *block);
-        mapGlobalLockRequestPort(*block, *glockReqPort);
-
         // operand ports.
         for (int i = 0; i < rf->portCount(); ++i) {
             RFPort* adfPort = dynamic_cast<RFPort*>(rf->port(i));

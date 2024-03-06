@@ -68,12 +68,15 @@ public:
         const TTAMachine::Machine& machine, ProGe::NetlistBlock* core);
 
 private:
+    std::deque<std::string> readFile(std::string filename);
+    std::string findAbsolutePath(std::string file);
     void createRFHeaderComment();
     void createMandatoryPorts();
     void createGuardPort();
     void createGuardProcess();
     void createRFWriteProcess();
     void createRFReadProcess();
+    void createRFDumpProcess();
     void finalizeHDL();
     void createImplementationFiles();
 
