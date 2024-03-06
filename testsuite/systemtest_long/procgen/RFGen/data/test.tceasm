@@ -1,0 +1,25 @@
+CODE;
+
+### Basic writing and reading
+9 -> RF.0,       ...;
+RF.0 -> RF_1.0,  ...;
+15 -> RF.0,      ...;
+RF.0 -> RF_1.0,  ...;
+
+### Simultaneous write to multiple RF ports.
+3 -> RF_MULTIPORT.4,     7-> RF_MULTIPORT.5;
+RF_MULTIPORT.4 -> RF.3,  RF_MULTIPORT.5 -> RF_ZEROREG.5;
+
+### Write something to zero register, output should still be 0.
+23 -> RF_ZEROREG.0,   ...;
+RF_ZEROREG.0 -> RF.5, ...;
+
+### Accesses to RF_ZEROREG to check its bus dump.
+6  -> RF_ZEROREG.2,   ...;
+18 -> RF_ZEROREG.4,   ...;
+35 -> RF_ZEROREG.6,   ...;
+17 -> RF_ZEROREG.6,   ...;
+15 -> RF_ZEROREG.6,   ...;
+RF_ZEROREG.6 -> RF.7, ...;
+RF_ZEROREG.4 -> RF.6, ...;
+
