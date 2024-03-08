@@ -11,7 +11,7 @@
     <guard>
       <simple-expr>
         <bool>
-          <name>BOOL</name>
+          <name>RF_BOOL_LAT_1</name>
           <index>0</index>
         </bool>
       </simple-expr>
@@ -19,7 +19,7 @@
     <guard>
       <simple-expr>
         <bool>
-          <name>BOOL</name>
+          <name>RF_BOOL_LAT_1</name>
           <index>1</index>
         </bool>
       </simple-expr>
@@ -27,7 +27,7 @@
     <guard>
       <inverted-expr>
         <bool>
-          <name>BOOL</name>
+          <name>RF_BOOL_LAT_1</name>
           <index>0</index>
         </bool>
       </inverted-expr>
@@ -35,7 +35,7 @@
     <guard>
       <inverted-expr>
         <bool>
-          <name>BOOL</name>
+          <name>RF_BOOL_LAT_1</name>
           <index>1</index>
         </bool>
       </inverted-expr>
@@ -53,6 +53,38 @@
     <width>32</width>
     <guard>
       <always-true/>
+    </guard>
+    <guard>
+      <simple-expr>
+        <bool>
+          <name>RF_BOOL_LAT_0</name>
+          <index>0</index>
+        </bool>
+      </simple-expr>
+    </guard>
+    <guard>
+      <simple-expr>
+        <bool>
+          <name>RF_BOOL_LAT_0</name>
+          <index>1</index>
+        </bool>
+      </simple-expr>
+    </guard>
+    <guard>
+      <inverted-expr>
+        <bool>
+          <name>RF_BOOL_LAT_0</name>
+          <index>0</index>
+        </bool>
+      </inverted-expr>
+    </guard>
+    <guard>
+      <inverted-expr>
+        <bool>
+          <name>RF_BOOL_LAT_0</name>
+          <index>1</index>
+        </bool>
+      </inverted-expr>
     </guard>
     <segment name="seg1">
       <writes-to/>
@@ -306,6 +338,61 @@
   </socket>
 
   <socket name="RF_o1_2">
+    <writes-to>
+      <bus>B1</bus>
+      <segment>seg1</segment>
+    </writes-to>
+    <writes-to>
+      <bus>B2</bus>
+      <segment>seg1</segment>
+    </writes-to>
+  </socket>
+
+  <socket name="BOOL_i1_1">
+    <reads-from>
+      <bus>B1</bus>
+      <segment>seg1</segment>
+    </reads-from>
+    <reads-from>
+      <bus>B2</bus>
+      <segment>seg1</segment>
+    </reads-from>
+  </socket>
+
+  <socket name="BOOL_o1_1">
+    <writes-to>
+      <bus>B1</bus>
+      <segment>seg1</segment>
+    </writes-to>
+    <writes-to>
+      <bus>B2</bus>
+      <segment>seg1</segment>
+    </writes-to>
+  </socket>
+
+  <socket name="BOOL_i1_1_1">
+    <reads-from>
+      <bus>B1</bus>
+      <segment>seg1</segment>
+    </reads-from>
+    <reads-from>
+      <bus>B2</bus>
+      <segment>seg1</segment>
+    </reads-from>
+  </socket>
+
+  <socket name="BOOL_i1_1_2">
+    <reads-from>
+      <bus>B1</bus>
+      <segment>seg1</segment>
+    </reads-from>
+    <reads-from>
+      <bus>B2</bus>
+      <segment>seg1</segment>
+    </reads-from>
+  </socket>
+
+  <socket name="BOOL_o1_1_1">
     <writes-to>
       <bus>B1</bus>
       <segment>seg1</segment>
@@ -1021,7 +1108,7 @@
     <address-space>data</address-space>
   </function-unit>
 
-  <register-file name="BOOL">
+  <register-file name="RF_BOOL_LAT_1">
     <type>normal</type>
     <size>2</size>
     <width>1</width>
@@ -1097,6 +1184,37 @@
     </port>
     <port name="P2">
       <connects-to>RF_o1_1_2</connects-to>
+    </port>
+  </register-file>
+
+  <register-file name="RF_BOOL_LAT_0">
+    <type>normal</type>
+    <size>2</size>
+    <width>1</width>
+    <max-reads>1</max-reads>
+    <max-writes>1</max-writes>
+    <port name="P1">
+      <connects-to>BOOL_i1_1</connects-to>
+    </port>
+    <port name="P2">
+      <connects-to>BOOL_o1_1</connects-to>
+    </port>
+  </register-file>
+
+  <register-file name="RF_BOOL_2_LAT_0">
+    <type>normal</type>
+    <size>2</size>
+    <width>1</width>
+    <max-reads>1</max-reads>
+    <max-writes>2</max-writes>
+    <port name="P1">
+      <connects-to>BOOL_i1_1_1</connects-to>
+    </port>
+    <port name="P2">
+      <connects-to>BOOL_i1_1_2</connects-to>
+    </port>
+    <port name="P3">
+      <connects-to>BOOL_o1_1_1</connects-to>
     </port>
   </register-file>
 

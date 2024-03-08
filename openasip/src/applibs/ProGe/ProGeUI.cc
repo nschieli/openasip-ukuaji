@@ -632,26 +632,6 @@ ProGeUI::generateIDF(
         }
     }
 
-/*
-    // For the RFs not defined in IDF, first try to select RFs from
-    // HDB, then try to generate.
-    for (auto&& rf : machine_->registerFileNavigator()) {
-        if (already_handled(rf->name(), handledRFs)) {
-                continue;
-            }
-        verbose << " select implementation for " << rf->name() << "... ";
-        RFImplementationLocation* loc =
-            new RFImplementationLocation("", -1, rf->name());
-        if (ProGeTools::checkForSelectableRF(options, *rf, *loc, verbose)) {
-            verbose << "OK (selected " << loc->id() << " from "
-                    << loc->hdbFile() << ")\n";
-            idf_->addRFImplementation(loc);
-            handledRFs.emplace_back(rf->name());
-        } else {
-            verbose << "FAIL\n";
-        }
-    }
-*/
     for (auto&& rf : machine_->registerFileNavigator()) {
         if (already_handled(rf->name(), handledRFs)) {
             continue;

@@ -159,17 +159,84 @@ RFGen::createGuardProcess() {
     if (!adfRF_->isUsedAsGuard()) {
         return;
     }
-    assert(adfRF_->guardLatency() == 1 &&
-           "RFGen supports only guard latency 1");
 
-    Asynchronous guardPortProcess(guardPortName_ + "_cp");
-    for (int i = 0; i < adfRF_->size(); i++) {
-        behaviour_
-            << Assign(guardPortName_ + "(" + std::to_string(i) + ")",
-                      LHSSignal(mainRegName_
-                                + "(" + std::to_string(i)+ ")(0)"));
+    std::string vhdlString = std::string("guard_out_cp : PROCESS (")
+            + mainRegName_;
+    std::string verilogString = "";
+    for (int i = 0; i < adfRF_->portCount(); ++i) {
+        TTAMachine::RFPort* adfPort =
+            static_cast<TTAMachine::RFPort*>(adfRF_->port(i));
+        if (adfPort->isInput()) {
+            std::string loadPortName = "load_" + adfPort->name() + "_in";
+            std::string opcodePortName = "opcode_" + adfPort->name() + "_in";
+            std::string dataPortName = "data_" + adfPort->name() + "_in";
+            vhdlString += ", " + loadPortName + ", "
+                + opcodePortName + ", " + dataPortName;
+        }
     }
+    vhdlString += std::string(")\n")
+        + "BEGIN\n"
+        +"  for i in " + std::to_string(adfRF_->size()) + "-1 downto 0 loop\n";
+
+    int numInputPorts = 0;
+    for (int i = 0; i < adfRF_->portCount(); ++i) {
+        TTAMachine::RFPort* adfPort =
+            static_cast<TTAMachine::RFPort*>(adfRF_->port(i));
+        if (adfPort->isInput()) {
+            numInputPorts += 1;
+        }
+    }
+
+    int inputPortIndex = 0;
+    Asynchronous guardPortProcess(guardPortName_ + "_cp");
+    if (adfRF_->guardLatency() == 0) {
+        for (int i = 0; i < adfRF_->portCount(); ++i) {
+            TTAMachine::RFPort* adfPort =
+                static_cast<TTAMachine::RFPort*>(adfRF_->port(i));
+            if (!adfPort->isInput()) {
+                continue;
+            }
+            std::string loadPortName = "load_" + adfPort->name() + "_in";
+            std::string opcodePortName = "opcode_" + adfPort->name() + "_in";
+            std::string dataPortName = "data_" + adfPort->name() + "_in";
+            if (inputPortIndex == 0) {
+                vhdlString += "    if ";
+            } else {
+                vhdlString += "    elsif ";
+            }
+            vhdlString +=
+                loadPortName + " = '1' and i = to_integer(unsigned("
+                + opcodePortName + ")) then\n";
+            vhdlString +=
+                "      " + guardPortName_ + "(i) <= " + dataPortName + "(0);\n";
+            inputPortIndex += 1;
+        }
+        vhdlString += "    else\n";
+        vhdlString +=
+            "      " + guardPortName_ + "(i) <= " +
+            mainRegName_ + "(i)(0);\n";
+        vhdlString += "    end if;\n";
+
+    } else if (adfRF_->guardLatency() == 1) {
+        for (int i = 0; i < adfRF_->portCount(); ++i) {
+            TTAMachine::RFPort* adfPort =
+                static_cast<TTAMachine::RFPort*>(adfRF_->port(i));
+            if (!adfPort->isInput()) {
+                continue;
+            }
+            vhdlString +=
+                "      " + guardPortName_ + "(i) <= " +
+                mainRegName_ + "(i)(0);\n";
+        }
+    } else {
+        assert(false && "RFGen supports only guard latency 0 or 1");
+    }
+    vhdlString += "  end loop;\n";
+    vhdlString += "END PROCESS guard_out_cp;\n";
+
+    behaviour_ << RawCodeLine(vhdlString, verilogString);
 }
+
 
 /*
  * Create register file write process.
