@@ -132,6 +132,7 @@ struct ProGeOptions {
         if (hdbList.empty()) {
             hdbList.emplace_back("generate_base32.hdb");
             hdbList.emplace_back("generate_lsu_32.hdb");
+            hdbList.emplace_back("generate_rf_iu.hdb");
             hdbList.emplace_back("asic_130nm_1.5V.hdb");
 
         }
