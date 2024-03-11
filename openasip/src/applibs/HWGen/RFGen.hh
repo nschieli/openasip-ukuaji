@@ -94,6 +94,6 @@ private:
 
     HDLGenerator::Behaviour behaviour_;
 
-    const std::string mainRegName_ = "reg";
+    const std::string mainRegName_ = "regfile_r";
     const std::string guardPortName_ = "guard_out";
 };

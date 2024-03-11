@@ -162,7 +162,6 @@ RFGen::createGuardProcess() {
 
     std::string vhdlString = std::string("guard_out_cp : PROCESS (")
             + mainRegName_;
-    std::string verilogString = "";
     for (int i = 0; i < adfRF_->portCount(); ++i) {
         TTAMachine::RFPort* adfPort =
             static_cast<TTAMachine::RFPort*>(adfRF_->port(i));
@@ -234,6 +233,13 @@ RFGen::createGuardProcess() {
     vhdlString += "  end loop;\n";
     vhdlString += "END PROCESS guard_out_cp;\n";
 
+    std::string verilogString
+        = std::string("  always @* begin\n")
+        + "    for (i = 0; i < " + std::to_string(adfRF_->size())
+        + "; i = i + 1) begin\n"
+        + "      guard_out[i] = " + mainRegName_ + "[i][0];\n"
+        + "    end\n"
+        + "  end\n" + "\n";
     behaviour_ << RawCodeLine(vhdlString, verilogString);
 }
 
@@ -248,11 +254,13 @@ RFGen::createRFWriteProcess() {
     rf_ << RawCodeLine(
         "type   reg_type is array (natural range <>) of std_logic_vector("
         + std::to_string(adfRF_->width()) + "-1 downto 0 );",
-        "reg [" + std::to_string(adfRF_->width()) + "-1:0]       regfile_r [0:"
+        "reg [" + std::to_string(adfRF_->width()) + "-1:0]       "
+        + mainRegName_ + " [0:"
         + std::to_string(adfRF_->size()) + "-1];");
     rf_ << RawCodeLine(
-        "signal reg    : reg_type (" + std::to_string(adfRF_->size()) + "-1 downto 0);",
-        "");
+        "signal " + mainRegName_ +"    : reg_type ("
+        + std::to_string(adfRF_->size()) + "-1 downto 0);",
+        "integer i;\n");
 
     std::string vhdlCode
         = "---------------------------------------------------------------\n"
@@ -263,8 +271,8 @@ RFGen::createRFWriteProcess() {
         "BEGIN\n"
         "  -- Asynchronous Reset\n"
         "  IF (rstx = '0') THEN\n"
-        "    for idx in (reg'length-1) downto 0 loop\n"
-        "      reg(idx) <= (others => '0');\n"
+        "    for idx in (" + mainRegName_ + "'length-1) downto 0 loop\n"
+        "      " + mainRegName_ + "(idx) <= (others => '0');\n"
         "    end loop;\n"
         "  ELSIF (clk'EVENT AND clk = '1') THEN\n"
         "    IF glock_in = '0' THEN\n";
@@ -278,7 +286,7 @@ RFGen::createRFWriteProcess() {
             vhdlCode
                 += "      IF " + loadPortName + " = '1' THEN\n"
                 +  "        opc := to_integer(unsigned(" + opcodePortName + "));\n"
-                +  "        reg(opc) <= " + dataPortName +";\n"
+                +  "        " + mainRegName_ + "(opc) <= " + dataPortName +";\n"
                 +  "      END IF;\n";
         }
     }
@@ -286,37 +294,68 @@ RFGen::createRFWriteProcess() {
     // If RF has zero register (first reg index always 0).
     if (adfRF_->zeroRegister()) {
         vhdlCode += "      -- Zero register\n";
-        vhdlCode += "      reg(0) <= (others => '0');\n";
+        vhdlCode += "      " + mainRegName_ + "(0) <= (others => '0');\n";
     }
 
     vhdlCode += "    END IF;\n";
     vhdlCode += "  END IF;\n";
     vhdlCode += "END PROCESS Input;\n";
 
-    std::string verilogCode = ""; // TODO
+    std::string verilogCode = "";
+    verilogCode += std::string("  always @(posedge clk or negedge rstx) begin\n")
+        + "    if (~rstx) begin\n"
+        + "      for (i = 0; i < " + std::to_string(adfRF_->size())
+        + "; i = i + 1) begin\n"
+        + "        " + mainRegName_ + "[i] <= 0;\n"
+        + "      end\n"
+        + "    end else begin\n"
+        + "    if (~glock_in) begin\n";
+    for (int i = 0; i < adfRF_->portCount(); ++i) {
+        TTAMachine::RFPort* adfPort = dynamic_cast<TTAMachine::RFPort*>(adfRF_->port(i));
+        if (adfPort->isInput()) {
+            std::string loadPortName = "load_" + adfPort->name() + "_in";
+            std::string opcodePortName = "opcode_" + adfPort->name() + "_in";
+            std::string dataPortName = "data_" + adfPort->name() + "_in";
+            verilogCode += "      if (" + loadPortName + " == 1) begin\n"
+                + "      " + mainRegName_ + "[" + opcodePortName + "] <= "
+                + dataPortName + ";\n"
+                + "      end\n";
+            }
+    }
+    verilogCode += "    end\n";
+    // If RF has zero register (first reg index always 0).
+    if (adfRF_->zeroRegister()) {
+        verilogCode += mainRegName_ + "[0] <= 0;\n";
+    }
+    verilogCode
+        += std::string("  end\n")
+        + "end\n"
+        + "\n";
 
     behaviour_ << RawCodeLine(vhdlCode, verilogCode);
 
 }
 
 /*
- * Create register file write process.
+ * Create register file read process.
  */
 void
 RFGen::createRFReadProcess() {
     std::string vhdlCode = "";
+    std::string verilogCode = "always @* begin\n";
     for (int i = 0; i < adfRF_->portCount(); ++i) {
         TTAMachine::RFPort* adfPort = dynamic_cast<TTAMachine::RFPort*>(adfRF_->port(i));
         if (adfPort->isOutput()) {
             std::string opcodePortName = "opcode_" + adfPort->name() + "_in";
             std::string dataPortName = "data_" + adfPort->name() + "_out";
             vhdlCode +=
-                dataPortName + " <= reg(to_integer(unsigned("
+                dataPortName + " <= " + mainRegName_ + "(to_integer(unsigned("
                 + opcodePortName + ")));\n";
+            verilogCode += dataPortName + " = " + mainRegName_
+                + "[" + opcodePortName + "];\n";
         }
     }
-
-    std::string verilogCode = ""; // TODO
+    verilogCode += "end\n";
 
     behaviour_ << RawCodeLine(vhdlCode, verilogCode);
 }
@@ -366,7 +405,7 @@ RFGen::createRFDumpProcess() {
         + "  end if;\n"
         + "  wait on clk until clk = '1' and clk'last_value = '0' and glock_in = '0';\n"
         + "  opc := to_integer(unsigned(opcode_" + portName + "_in));\n"
-        + "  if(data_" + portName + "_in /= reg(opc)) then\n"
+        + "  if(data_" + portName + "_in /= " + mainRegName_ + "(opc)) then\n"
         + "    if(load_" + portName + "_in = '1' and unsigned(opcode_"
         + portName + "_in) /= to_unsigned(0, 32)) then\n"
         + "      write(line_out, reg_to_alias(opc));\n"
@@ -374,7 +413,8 @@ RFGen::createRFDumpProcess() {
         + "_in))) = \"s10\" or reg_to_alias(opc) = \"s11\") then\n"
         + "write(line_out, ' ');\n"
         + " end if;\n"
-        + "write(line_out, to_unsigned_hex(reg(to_integer(unsigned(opcode_"
+        + "write(line_out, to_unsigned_hex(" + mainRegName_
+        +"(to_integer(unsigned(opcode_"
         + portName + "_in)))));\n"
         + "write(line_out, ' ');\n"
         + "write(line_out, dash);\n"
@@ -387,7 +427,7 @@ RFGen::createRFDumpProcess() {
         + "end process file_output;\n"
         + "--pragma translate_on\n";
 
-    std::string verilogCode = "Verilog RFGen not yet implemented";
+    std::string verilogCode = "// RFGen: RF dump verilog not yet implemented";
 
     behaviour_ << RawCodeLine(vhdlCode, verilogCode);
 }

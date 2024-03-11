@@ -1,1 +1,1 @@
-Verilog version of RF dump snippet not yet implemented!
+// Verilog version of RF dump snippet not yet implemented!

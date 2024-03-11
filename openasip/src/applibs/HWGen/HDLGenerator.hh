@@ -1657,6 +1657,13 @@ namespace HDLGenerator {
                 for (auto&& r : registers_) {
                     r.declare(stream, lang, level + 1);
                 }
+
+                // Raw code lines
+                stream << "\n";
+                for (auto&& r : rawCodeLines_) {
+                    r.hdl(stream, lang, level + 1);
+                }
+
                 // instantiate stuff
                 for (auto&& m : modules_) {
                     stream << "\n";
