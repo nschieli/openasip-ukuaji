@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - main
+      - verilog-improvements
 
 jobs:
   build:
@@ -60,7 +61,11 @@ jobs:
             cmake \
             graphviz \
             bc \
-            ghdl
+            ghdl \
+            gperf \
+            gcc \
+            bison \
+            flex
 
       - name:
         run: |
@@ -73,6 +78,16 @@ jobs:
           path: |
             ${{ github.workspace }}/local
           key: ${{ runner.os }}-llvm-${{ hashFiles('openasip/tools/scripts/install_llvm_${{ env.LLVM_VERSION }}.sh') }}
+
+      - name: Install IVerilog
+      run: |
+        mkdir -p ${{ github.workspace }}/iverilog
+        cd ${{ github.workspace }}/iverilog
+        git clone --single-branch --depth 1 --branch v12_0 https://github.com/steveicarus/iverilog.git
+        sh autoconf.sh
+        ./configure
+        make
+        make install
 
       - name: Install LLVM
         run: |
