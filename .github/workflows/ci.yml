@@ -80,14 +80,14 @@ jobs:
           key: ${{ runner.os }}-llvm-${{ hashFiles('openasip/tools/scripts/install_llvm_${{ env.LLVM_VERSION }}.sh') }}
 
       - name: Install IVerilog
-      run: |
-        mkdir -p ${{ github.workspace }}/iverilog
-        cd ${{ github.workspace }}/iverilog
-        git clone --single-branch --depth 1 --branch v12_0 https://github.com/steveicarus/iverilog.git
-        sh autoconf.sh
-        ./configure
-        make
-        make install
+        run: |
+          mkdir -p ${{ github.workspace }}/iverilog
+          cd ${{ github.workspace }}/iverilog
+          git clone --single-branch --depth 1 --branch v12_0 https://github.com/steveicarus/iverilog.git
+          sh autoconf.sh
+          ./configure
+          make
+          make install
 
       - name: Install LLVM
         run: |
